@@ -11,9 +11,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import clusters_utils as cl
 import string
 import world_bank_data as wb
-
+from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
+from sklearn.preprocessing import PolynomialFeatures
 
 def get_data(lsms_path: str, cnn_path: str, osm_path: str):
     """
@@ -53,8 +56,6 @@ def get_data(lsms_path: str, cnn_path: str, osm_path: str):
     complete = osm.merge(cnn_lsms, on="id")
 
     return complete, all_cols
-
-
 def run_ridge(X: np.array, y: np.array, alpha: int = 1000, seed=42):
     """
     Run Ridge Regression
@@ -83,7 +84,6 @@ def run_ridge(X: np.array, y: np.array, alpha: int = 1000, seed=42):
 
     y_hest = model.predict(X)
     return np.mean(r2), y_hest, model
-
 
 def run_ridge_out(X: np.array, y: np.array, X_out: np.array, y_out: np.array, alpha: int = 1000):
     """
@@ -160,7 +160,7 @@ def get_inflation_perf(country, base, target):
     target_infl = wb.get_series("FP.CPI.TOTL", country=country, date=target)[0]
     return target_infl / base_infl
 
-def get_recent_features(df: pd.DataFrame, countries: list, osm_cols: list, infl: int = 1, scale_cnn: bool = True, scale_complete: bool = True, log_transform = True):
+def get_recent_features(df: pd.DataFrame, countries: list, osm_cols: list, infl: int = 1, scale_cnn: bool = True, scale_complete: bool = True, log_transform = True, pca_comp_osm = None, tsne_comp=None, pca_comp_cnn = None, poly_exp_deg = None):
     """
     Return features from most recent survey for a country.
 
@@ -190,9 +190,25 @@ def get_recent_features(df: pd.DataFrame, countries: list, osm_cols: list, infl:
         
         if scale_cnn:
             cnn_X = StandardScaler().fit_transform(cnn_X)
+            if poly_exp_deg is not None:
+                poly = PolynomialFeatures(degree=poly_exp_deg)
+                cnn_X = poly.fit_transform(cnn_X)
+
+            if pca_comp_cnn is not None:
+                pca = PCA(n_components=pca_comp_cnn)
+                cnn_X = pca.fit_transform(cnn_X)
+
+            if tsne_comp is not None:
+                cnn_X = TSNE(n_components=tsne_comp).fit_transform(cnn_X)
+
         osm_X = year_df[osm_cols].values
+        if pca_comp_osm is not None:
+            pca = PCA(n_components=pca_comp_osm, random_state=1)
+            osm_X = pca.fit_transform(osm_X)
+
         tmp_X = np.hstack((cnn_X, osm_X))
         y_ = year_df["cons_pc"].values
+
 
         if X is None:
             X = tmp_X
@@ -246,6 +262,9 @@ def get_features(df: pd.DataFrame, countries: list, years: list, osm_cols: list,
                 cnn_X = StandardScaler().fit_transform(cnn_X)
             osm_X = year_df[osm_cols].values
             tmp_X = np.hstack((cnn_X, osm_X))
+
+
+
             y_ = year_df["cons_pc"].values
 
             if X is None:
