@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import clusters_utils as cl
 import string
 import world_bank_data as wb
 from sklearn.decomposition import PCA
@@ -49,22 +48,24 @@ def get_data(lsms_path: str, cnn_path: str, osm_path: str):
     pois_cols = pois.columns[:-1]  # id is last column in my case
     roads_cols = roads.columns[1:]
 
-    all_cols = list(build_cols) + list(roads_cols) + list(pois_cols)
+    all_cols = list(build_cols) + list(pois_cols) + list(roads_cols)
 
     osm = build.merge(pois, on="id")
     osm = osm.merge(roads, on="id")
     complete = osm.merge(cnn_lsms, on="id")
 
     return complete, all_cols
-def run_ridge(X: np.array, y: np.array, alpha: int = 1000, seed=42):
+
+def run_model(X: np.array, y: np.array, model_, seed=42, **params):
     """
     Run Ridge Regression
 
     Args:
     - X (np.array): Features
     - y (np.array): Consumption
-    - alpha (int): param for Ridge Regression
+    - model (func): Model to tune the parameters
     - seed (int): For reproducibility
+    - **params : hyperparameters to give in the model
 
     Return:
     - r^2
@@ -74,16 +75,19 @@ def run_ridge(X: np.array, y: np.array, alpha: int = 1000, seed=42):
 
     kf = KFold(n_splits=10, shuffle=True, random_state=seed)
     r2 = []
+    y_real = []
+    y_predicted = []
     for train_ind, test_ind in kf.split(X, y):
         x_train_fold, x_test_fold = X[train_ind], X[test_ind]
         y_train_fold, y_test_fold = y[train_ind], y[test_ind]
-        model = Ridge(alpha)
+        model = model_(**params)
         model.fit(x_train_fold, y_train_fold)
-        y_predict = model.predict(x_test_fold)
-        r2.append(pearsonr(y_test_fold, y_predict)[0]**2)
+        test_predict = model.predict(x_test_fold)
+        r2.append(pearsonr(y_test_fold, test_predict)[0]**2)
+        y_predicted.extend(test_predict)
+        y_real.extend(y_test_fold)
 
-    y_hest = model.predict(X)
-    return np.mean(r2), y_hest, model
+    return np.mean(r2), y_real, y_predicted, model
 
 def run_ridge_out(X: np.array, y: np.array, X_out: np.array, y_out: np.array, alpha: int = 1000):
     """
@@ -116,7 +120,7 @@ def run_ridge_out(X: np.array, y: np.array, X_out: np.array, y_out: np.array, al
     return np.mean(r2), y_hest, model
 
 
-def plot_predictions(y: np.array, yhat: np.array, r2: float, country: str, year: str, n: int, max_y=None, x_label = False):
+def plot_predictions(y: np.array, yhat: np.array, r2: float, country: str, year: str, max_y=None, x_label = False):
     """
     Util for plot predictions
 
@@ -145,13 +149,12 @@ def plot_predictions(y: np.array, yhat: np.array, r2: float, country: str, year:
     ax.spines['top'].set_color('none')
 
     plt.xlabel('Observed consumption($/day)', fontsize=14)
-    if n == 0 or x_label:
-        plt.ylabel('Predicted consumption($/day)', fontsize=14)
+    plt.ylabel('Predicted consumption($/day)', fontsize=14)
     plt.title(fr'$r^2$ {round(r2, 2)}', fontsize=14, loc='left')
     plt.suptitle(f'{country} {year}', ha="left", x=0.119, y=0.95, fontsize=18)
     plt.grid(alpha=1)
-    ax.text(-0.1, 1.1, string.ascii_uppercase[n],
-            size=20, weight='bold', transform=ax.transAxes)
+    #ax.text(-0.1, 1.1, string.ascii_uppercase[n],
+    #        size=20, weight='bold', transform=ax.transAxes)
 
     return fig
 
@@ -160,7 +163,7 @@ def get_inflation_perf(country, base, target):
     target_infl = wb.get_series("FP.CPI.TOTL", country=country, date=target)[0]
     return target_infl / base_infl
 
-def get_recent_features(df: pd.DataFrame, countries: list, osm_cols: list, infl: int = 1, scale_cnn: bool = True, scale_complete: bool = True, log_transform = True, pca_comp_osm = None, tsne_comp=None, pca_comp_cnn = None, poly_exp_deg = None):
+def get_recent_features(df: pd.DataFrame, countries: list, osm_cols: list, infl: int = 1, scale_cnn: bool = True, scale_complete: bool = True, log_transform = True, pca_comp_osm = None, tsne_comp=None, pca_comp_cnn = None, poly_exp_deg_cnn = None, poly_exp_deg_osm = None, null_osm_features=None):
     """
     Return features from most recent survey for a country.
 
@@ -190,8 +193,8 @@ def get_recent_features(df: pd.DataFrame, countries: list, osm_cols: list, infl:
         
         if scale_cnn:
             cnn_X = StandardScaler().fit_transform(cnn_X)
-            if poly_exp_deg is not None:
-                poly = PolynomialFeatures(degree=poly_exp_deg)
+            if poly_exp_deg_cnn is not None:
+                poly = PolynomialFeatures(degree=poly_exp_deg_cnn)
                 cnn_X = poly.fit_transform(cnn_X)
 
             if pca_comp_cnn is not None:
@@ -201,14 +204,21 @@ def get_recent_features(df: pd.DataFrame, countries: list, osm_cols: list, infl:
             if tsne_comp is not None:
                 cnn_X = TSNE(n_components=tsne_comp).fit_transform(cnn_X)
 
+        if null_osm_features is not None:
+            for f in null_osm_features:
+                if f in osm_cols:
+                    osm_cols.remove(f)
+
         osm_X = year_df[osm_cols].values
+        if poly_exp_deg_osm is not None:
+            poly = PolynomialFeatures(degree=poly_exp_deg_osm)
+            osm_X = poly.fit_transform(osm_X)
         if pca_comp_osm is not None:
             pca = PCA(n_components=pca_comp_osm, random_state=1)
             osm_X = pca.fit_transform(osm_X)
 
         tmp_X = np.hstack((cnn_X, osm_X))
         y_ = year_df["cons_pc"].values
-
 
         if X is None:
             X = tmp_X
@@ -228,6 +238,57 @@ def get_recent_features(df: pd.DataFrame, countries: list, osm_cols: list, infl:
         y = np.log(y)
 
     return X, y
+
+
+def get_recent_osm_features(df: pd.DataFrame, countries: list, osm_cols: list, infl: int = 1, scale_complete: bool = True, log_transform=True):
+    """
+    Return features from most recent survey for a country.
+
+    Args
+    - df (pd.Dataframe): Dataframe with data
+    - countries (list): Countries for which data is requested
+    - osm_cols (list): Columns for OSM features
+    - infl (int): infaltion rate for scaling
+    - scale_complete (bool): standard. combined features
+    - log_transform (bool): Log Transform cons.
+
+    Return:
+    - X (np.array): features
+    - y (np.array): cons.
+    """
+    X = None
+    y = None
+
+    for country in countries:
+        tmp_df = df.loc[df.country == country]
+
+        years = tmp_df.groupby(["year"]).groups.keys()
+        year = max(years)
+        year_df = tmp_df.loc[tmp_df.year == year]
+
+        osm_X = year_df[osm_cols].values
+
+        y_ = year_df["cons_pc"].values
+
+        if X is None:
+            X = osm_X
+        else:
+            X = np.vstack((X, osm_X))
+        if y is None:
+            y = y_
+        else:
+            y = np.append(y, y_)
+
+    if scale_complete:
+        X = StandardScaler().fit_transform(X)
+
+
+    y /= infl
+
+    if log_transform:
+        y = np.log(y)
+
+    return X, y, year_df, osm_X
 
 def get_features(df: pd.DataFrame, countries: list, years: list, osm_cols: list, infl: int = 1, scale_cnn: bool = True, scale_complete: bool = True, log_transform = True):
     """
@@ -262,9 +323,6 @@ def get_features(df: pd.DataFrame, countries: list, years: list, osm_cols: list,
                 cnn_X = StandardScaler().fit_transform(cnn_X)
             osm_X = year_df[osm_cols].values
             tmp_X = np.hstack((cnn_X, osm_X))
-
-
-
             y_ = year_df["cons_pc"].values
 
             if X is None:

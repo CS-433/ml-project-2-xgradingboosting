@@ -116,13 +116,13 @@ def plot_split_perf(split):
 
 def folds_from_split(split_map):
     for k, v in split_map.items():
-        yield [i for i in vv for kk, vv in split_map.items() if kk != k], v
+        yield [i for (kk, vv) in split_map.items() for i in vv if kk != k], v
 
 
-def save_lat_lon(lat, lon, path="data/lat_lon.npz"):
+def save_lat_lon(lat, lon, path="../data/lat_lon.npz"):
     np.savez(path, lat=lat, lon=lon)
 
 
-def load_lat_lon(path="data/lat_lon.npz"):
+def load_lat_lon(path="../data/lat_lon.npz"):
     data = np.load(path)
     return data["lat"], data["lon"]
