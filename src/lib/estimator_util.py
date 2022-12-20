@@ -13,6 +13,8 @@ import pandas as pd
 import seaborn as sns
 import string
 import world_bank_data as wb
+from lib import clusters_utils as cl
+
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import PolynomialFeatures
@@ -56,7 +58,7 @@ def get_data(lsms_path: str, cnn_path: str, osm_path: str):
 
     return complete, all_cols
 
-def run_model(X: np.array, y: np.array, model_, seed=42, **params):
+def run_model(X: np.array, y: np.array, model_, seed=42, kf=None, **params):
     """
     Run Ridge Regression
 
@@ -72,12 +74,12 @@ def run_model(X: np.array, y: np.array, model_, seed=42, **params):
     - predicated y
     - model
     """
-
-    kf = KFold(n_splits=10, shuffle=True, random_state=seed)
+    if kf is None:
+        kf = KFold(n_splits=10, shuffle=True, random_state=seed).split(X, y)
     r2 = []
     y_real = []
     y_predicted = []
-    for train_ind, test_ind in kf.split(X, y):
+    for train_ind, test_ind in kf:
         x_train_fold, x_test_fold = X[train_ind], X[test_ind]
         y_train_fold, y_test_fold = y[train_ind], y[test_ind]
         model = model_(**params)
