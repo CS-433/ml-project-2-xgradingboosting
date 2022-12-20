@@ -237,7 +237,7 @@ def get_recent_features(df: pd.DataFrame, countries: list, osm_cols: list, infl:
     return X, y
 
 
-def get_recent_osm_features(df: pd.DataFrame, countries: list, osm_cols: list, infl: int = 1, scale_complete: bool = True, log_transform=True):
+def get_recent_osm_features(df: pd.DataFrame, countries: list, osm_cols: list, infl: int = 1, scale_complete: bool = True, log_transform=True, pca_comp=None, null_osm_features=None):
     """
     Return features from most recent survey for a country.
 
@@ -248,6 +248,7 @@ def get_recent_osm_features(df: pd.DataFrame, countries: list, osm_cols: list, i
     - infl (int): infaltion rate for scaling
     - scale_complete (bool): standard. combined features
     - log_transform (bool): Log Transform cons.
+    - pca_comp (int) : number of Principal Component we want to keep
 
     Return:
     - X (np.array): features
@@ -278,8 +279,14 @@ def get_recent_osm_features(df: pd.DataFrame, countries: list, osm_cols: list, i
 
     if scale_complete:
         X = StandardScaler().fit_transform(X)
-
-
+    if pca_comp is not None:
+        pca = PCA(n_components=pca_comp, random_state=1)
+        X = pca.fit_transform(X)
+    if null_osm_features is not None:
+        for f in null_osm_features:
+            if f in osm_cols:
+                osm_cols.remove(f)
+    
     y /= infl
 
     if log_transform:
