@@ -58,7 +58,7 @@ def get_data(lsms_path: str, cnn_path: str, osm_path: str):
 
 def run_model(X: np.array, y: np.array, model_, seed=42, **params):
     """
-    Run Ridge Regression
+    Fit the model and evaluate it 
 
     Args:
     - X (np.array): Features
@@ -69,7 +69,8 @@ def run_model(X: np.array, y: np.array, model_, seed=42, **params):
 
     Return:
     - r^2
-    - predicated y
+    - true output
+    - predicted output
     - model
     """
 
@@ -89,38 +90,34 @@ def run_model(X: np.array, y: np.array, model_, seed=42, **params):
 
     return np.mean(r2), y_real, y_predicted, model
 
-def run_ridge_out(X: np.array, y: np.array, X_out: np.array, y_out: np.array, alpha: int = 1000):
+def run_model_out(X: np.array, y: np.array, X_out: np.array, y_out: np.array, model_, **params):
     """
-    Run Ridge Regression with training on X and predictions on X_out
+    Fit the model with training on X and predictions on X_out
 
     Args:
     - X (np.array): Features
     - y (np.array): Consumption
     - X_out (np.array): Features for evaluation
     - y_out (np.array): Consumption for evaluation
-    - alpha (int): param for Ridge Regression
+    - model (func): Model to tune the parameters
+    - seed (int): For reproducibility
+    - **params : hyperparameters to give in the model
 
     Return:
     - r^2
-    - predicated y
+    - predicted output
     - model
     """
-    kf = KFold(n_splits=10, shuffle=True, random_state=1)
     r2 = []
-    for train_ind, test_ind in kf.split(X, y):
-        x_train_fold, x_test_fold = X[train_ind], X[test_ind]
-        y_train_fold, y_test_fold = y[train_ind], y[test_ind]
-
-        model = Ridge(alpha)
-        model.fit(x_train_fold, y_train_fold)
-        y_predict = model.predict(X_out)
-        r2.append(pearsonr(y_out, y_predict)[0]**2)
-
-    y_hest = model.predict(X_out)
-    return np.mean(r2), y_hest, model
+    model = model_(**params)
+    model.fit(X, y)
+    y_predicted = model.predict(X_out)
+    r2.append(pearsonr(y_out, y_predicted)[0]**2)
+    
+    return np.mean(r2), y_predicted, model
 
 
-def plot_predictions(y: np.array, yhat: np.array, r2: float, country: str, year: str, max_y=None, x_label = False):
+def plot_predictions(y: np.array, yhat: np.array, r2: float, country: str, year: str, max_y=None):
     """
     Util for plot predictions
 
