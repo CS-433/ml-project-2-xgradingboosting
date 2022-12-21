@@ -60,7 +60,7 @@ def get_data(lsms_path: str, cnn_path: str, osm_path: str):
 
 def run_model(X: np.array, y: np.array, model_, seed=42, kf=None, **params):
     """
-    Run Ridge Regression
+    Fit the model and evaluate it 
 
     Args:
     - X (np.array): Features
@@ -71,7 +71,8 @@ def run_model(X: np.array, y: np.array, model_, seed=42, kf=None, **params):
 
     Return:
     - r^2
-    - predicated y
+    - true output
+    - predicted output
     - model
     """
     if kf is None:
@@ -91,38 +92,34 @@ def run_model(X: np.array, y: np.array, model_, seed=42, kf=None, **params):
 
     return np.mean(r2), y_real, y_predicted, model
 
-def run_ridge_out(X: np.array, y: np.array, X_out: np.array, y_out: np.array, alpha: int = 1000):
+def run_model_out(X: np.array, y: np.array, X_out: np.array, y_out: np.array, model_, **params):
     """
-    Run Ridge Regression with training on X and predictions on X_out
+    Fit the model with training on X and predictions on X_out
 
     Args:
     - X (np.array): Features
     - y (np.array): Consumption
     - X_out (np.array): Features for evaluation
     - y_out (np.array): Consumption for evaluation
-    - alpha (int): param for Ridge Regression
+    - model (func): Model to tune the parameters
+    - seed (int): For reproducibility
+    - **params : hyperparameters to give in the model
 
     Return:
     - r^2
-    - predicated y
+    - predicted output
     - model
     """
-    kf = KFold(n_splits=10, shuffle=True, random_state=1)
     r2 = []
-    for train_ind, test_ind in kf.split(X, y):
-        x_train_fold, x_test_fold = X[train_ind], X[test_ind]
-        y_train_fold, y_test_fold = y[train_ind], y[test_ind]
-
-        model = Ridge(alpha)
-        model.fit(x_train_fold, y_train_fold)
-        y_predict = model.predict(X_out)
-        r2.append(pearsonr(y_out, y_predict)[0]**2)
-
-    y_hest = model.predict(X_out)
-    return np.mean(r2), y_hest, model
+    model = model_(**params)
+    model.fit(X, y)
+    y_predicted = model.predict(X_out)
+    r2.append(pearsonr(y_out, y_predicted)[0]**2)
+    
+    return np.mean(r2), y_predicted, model
 
 
-def plot_predictions(y: np.array, yhat: np.array, r2: float, country: str, year: str, max_y=None, x_label = False):
+def plot_predictions(y: np.array, yhat: np.array, r2: float, country: str, year: str, max_y=None):
     """
     Util for plot predictions
 
@@ -242,7 +239,7 @@ def get_recent_features(df: pd.DataFrame, countries: list, osm_cols: list, infl:
     return X, y
 
 
-def get_recent_osm_features(df: pd.DataFrame, countries: list, osm_cols: list, infl: int = 1, scale_complete: bool = True, log_transform=True):
+def get_recent_osm_features(df: pd.DataFrame, countries: list, osm_cols: list, infl: int = 1, scale_complete: bool = True, log_transform=True, pca_comp=None, null_osm_features=None):
     """
     Return features from most recent survey for a country.
 
@@ -253,6 +250,7 @@ def get_recent_osm_features(df: pd.DataFrame, countries: list, osm_cols: list, i
     - infl (int): infaltion rate for scaling
     - scale_complete (bool): standard. combined features
     - log_transform (bool): Log Transform cons.
+    - pca_comp (int) : number of Principal Component we want to keep
 
     Return:
     - X (np.array): features
@@ -283,8 +281,14 @@ def get_recent_osm_features(df: pd.DataFrame, countries: list, osm_cols: list, i
 
     if scale_complete:
         X = StandardScaler().fit_transform(X)
-
-
+    if pca_comp is not None:
+        pca = PCA(n_components=pca_comp, random_state=1)
+        X = pca.fit_transform(X)
+    if null_osm_features is not None:
+        for f in null_osm_features:
+            if f in osm_cols:
+                osm_cols.remove(f)
+    
     y /= infl
 
     if log_transform:
