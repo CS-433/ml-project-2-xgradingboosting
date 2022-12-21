@@ -7,24 +7,24 @@ TLDR: We are using data from Landsat and OpenStreetMap to predict consumption. C
 TLDR: Go the [src](src/) dir and follow the steps. 
 
 ### Setup
-To run the code you have multiple options. For both you have to install the requirements file by executing `pip install -r requirements.txt`.
-
-#### Google Colab
-
-You can use Google Colab to setup a SSH connection and connect your IDE or Editor with your Google Colab machine and work remotely. The benefit here is, you directly using tools like [Google Earth Engine](https://earthengine.google.com/) and [Pytorch](https://pytorch.org/). Also you can use the GPU's. To setup the SSH connection follow the steps:
-
-1. Get a free [ngork](https://ngrok.com/) account and copy your API keys.
-2. Open the [colab_ssh](colab_ssh.ipynb) in your Colab session and execute it.
-3. Open your IDE and change the SSH settings to the one given in the last cell of the [colab_ssh](colab_ssh.ipynb) and connect to the machine.
-4. Now you should have remote access. You can install git using apt and the Python Extension in your IDE, to execute Jupyter Notebooks. 
+To run the code on your local machine you have to install the requirements file by executing `pip install -r requirements.txt`.
 
 #### Run local
 
-Of course you can run the code on your local machine. We strongly recommend to execute the [0.1_download_satellite_colab](src/1_feature_generation/0_download_satellite.ipynb) and [1.1_cnn colab.ipynb](src/1_feature_generation/0.1_download_satellite_colab.ipynb) on Google Colab.
+Most of the code can be run on your local machine, you just have to clone the git repository. However, we strongly recommend to execute the [0.1_download_satellite_colab](src/1_feature_generation/0.1_download_satellite_colab.ipynb) and [1.1_cnn colab.ipynb](src/1_feature_generation/1.1_cnn colab.ipynb) on Google Colab. The benefit here is, you directly using tools like [Google Earth Engine](https://earthengine.google.com/) and [Pytorch](https://pytorch.org/), in addition you can use the GPU's to reduce significantly the computation time. Also note that running the CNN requires at least 28GB of RAM.
+
+#### Google Colab
+
+You can directly run a Jupyter Notebook from a GitHub project. To do so, follow the steps:
+
+1. Open Google Colab and click on "Open the notebook"
+2. This opens a box with different tabs, go on GitHub and connect your GitHub account
+3. Once connected, you have access to the drop-down menu of your Git repositories. Search the project "predicting-poverty-through-time" and the list of files in the repository will be displayed. 
+4. Open the one you want to run 
 
 ### LSMS
 
-We are using the surveys of the WorldBank as our true gold standart. You have to download the [LSMS surveys](https://microdata.worldbank.org/index.php/catalog/lsms) more or less manually. However we automated the process partly. You can find the code in [0_lsms_processing](src/0_lsms_processing/). 
+We are using the surveys of the WorldBank as our true gold standart. You have to download the [LSMS surveys](https://microdata.worldbank.org/index.php/catalog/lsms) more or less manually. However the process is partly automated. You can find the code in [0_lsms_processing](src/0_lsms_processing/). 
 
 - [0_download_country_codes](src/0_lsms_processing/0_download_country_codes.ipynb): Download the country codes for all Sub Saharian African countries from the WorldBank API to use the same country codes.
 - [1_check_lsms_availability](src/0_lsms_processing/1_check_lsms_availability.ipynb): Checks the availability of the LSMS for the given countries.
@@ -35,11 +35,11 @@ After running this code you should have processed survey files in [data/lsms/pro
 
 ### Satellite data and features
 
-To download the data please execute the [0_download_satellite.ipynb](src/1_feature_generation/0_download_satellite.ipynb) notebook. However we recommend you to execute it on Google Colab. For this we have a modified [Colab](src/1_feature_generation/0.1_download_satellite_colab.ipynb) of the notebook, which contains all necessary libs. Since you would need to install Earth Engine locally. You also need a [Google Earth Engine account](https://earthengine.google.com/) to execute the code. Researchers, NGO's and country get free access within a short time. You can download our extracted data from [here](https://drive.google.com/file/d/1HJ3Q6BhmcZsRxb-JjhSkL6zH7hoMj1HB/view?usp=sharing).
+To download the data please execute the [0_download_satellite.ipynb](src/1_feature_generation/0_download_satellite.ipynb) notebook. However we recommend you to execute it on Google Colab. For this we have a modified [Colab](src/1_feature_generation/0.1_download_satellite_colab.ipynb) of the notebook, which contains all necessary libs. Since you would need to install Earth Engine locally. You also need a [Google Earth Engine account](https://earthengine.google.com/) to execute the code. Researchers, NGO's and country get free access within a short time. You can download the extracted data from [here](https://drive.google.com/file/d/1HJ3Q6BhmcZsRxb-JjhSkL6zH7hoMj1HB/view?usp=sharing).
 
-After you download the data you can train the CNN using [1_cnn.ipynb](src/1_feature_generation/1_cnn.ipynb). Again we recommend to execute it on Colab for this you can use our [colab](src/1_feature_generation/1.1_cnn colab.ipynb) version. If you don't want to train the network from scratch, you can use our [weights](https://drive.google.com/file/d/1Vt6wC4d0qdbyzJlIILPCaf8zWoMbTzGB/view?usp=sharing).
+After you download the data you can train the CNN using [1_cnn.ipynb](src/1_feature_generation/1_cnn.ipynb). Again we recommend to execute it on Colab for this you can use the [colab](src/1_feature_generation/1.1_cnn colab.ipynb) version. If you don't want to train the network from scratch, you can use the [weights](https://drive.google.com/file/d/1Vt6wC4d0qdbyzJlIILPCaf8zWoMbTzGB/view?usp=sharing).
 
-⚠ Caution: The tfrecords need a lot of RAM! 
+⚠ Caution: The tfrecords need a lot of RAM (over 28GB)! 
 
 ### OSM Features 
 
@@ -51,20 +51,23 @@ All the extracted features can be found in the [data](data/) directory.
 ### Evaluation 
 
 After you successfully downloaded, processed and extracted everything you can run the models in [2_evaluation](src/2_evaluation).  
-- [0_recent_surveys](src/2_evaluation/0_recent_surveys.ipynb): Evaluation of the recent surveys for each country.
+- [0_recent_surveys](src/2_evaluation/0_recent_surveys.ipynb): Evaluation of the recent surveys for each country and optimisation of the prediction model, plot of the features importances
 - [1_recent_combined](src/2_evaluation/1_recent_combined.ipynb): Evaluation on combined (pooled) features of the most recent surveys of each country.
 - [3_time_travel](src/2_evaluation/3_time_travel.ipynb): Evaluation of the prediction through time. 
 
 The figures generated in by this code are saved in the dir [figs](figs/).
+Note that the goal of our project is to optimize the existing model, so we made sure to keep the base model which, in each part of the code, is trained and evaluated before our best model (so we have each time the graphs of the results with a Ridge Regression and CatBoost separately)
+
 
 ### Other figures
 
-The [3_figures](src/3_figures/) contains the code for all the figures generated in the report.
+The [3_figs](src/3_figs/) contains the code for some figures presented in the original report of Aamir Shakir such as the cluster repartition and consumption distribution.
 
 ### [lib folder](src/lib/) 
 
 The lib folder contains code, which used in the notebooks. Please read the code and the comment to understand in depth there function. Here an overview.
 
+- [clusters_util](src/lib/clusters_util.py): Functions that assure the non overlapping of the satellites images between test and train set
 - [estimator_util](src/lib/estimator_util.py): contains the functions such as the ridge regression, data load for the estimation.
 - [lsms](src/lib/lsms.py): Class for processing the surveys.
 - [satellite_utils](src/lib/satellite_utils.py): Utils for satellite extraction.
