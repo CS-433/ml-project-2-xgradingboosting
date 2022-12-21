@@ -56,7 +56,10 @@ def latLonToMeters(lat, lon):
     return np.array(projLatLonToWorldMercator(points[:, 0], points[:, 1]))
 
 
-def cluster_stats(points):
+def cluster_stats(points=None, lat=None, lon=None):
+    if points is None:
+        points = latLonToMeters(lat, lon)
+
     tree = KDTree(points, metric="manhattan")
     clusters_count = tree.query_radius(points, CLUSTER_SIZE, count_only=True)
     return {
@@ -65,7 +68,7 @@ def cluster_stats(points):
         "mean": np.mean(clusters_count),
         "median": np.median(clusters_count),
         "std": np.std(clusters_count),
-        # "probability overlapping": len(set().union(*clusters_count)) / len(points),
+        #"probability overlapping": len(set().union(*clusters_count)) / len(points),
         "hist": sns.distplot(clusters_count, kde=False, bins=20),
     }
 

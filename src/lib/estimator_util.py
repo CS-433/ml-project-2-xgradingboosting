@@ -149,7 +149,7 @@ def plot_predictions(y: np.array, yhat: np.array, r2: float, country: str, year:
 
     plt.xlabel('Observed consumption($/day)', fontsize=14)
     plt.ylabel('Predicted consumption($/day)', fontsize=14)
-    plt.title(fr'$r^2$ {round(r2, 2)}', fontsize=14, loc='left')
+    plt.title(fr'$r^2$ {round(r2, 3)}', fontsize=14, loc='left')
     plt.suptitle(f'{country} {year}', ha="left", x=0.119, y=0.95, fontsize=18)
     plt.grid(alpha=1)
     #ax.text(-0.1, 1.1, string.ascii_uppercase[n],
