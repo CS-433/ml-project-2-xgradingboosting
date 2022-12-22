@@ -84,4 +84,6 @@ There are still some parts which parts which are Work In Progress, such as the T
 - [africa-poverty](https://github.com/sustainlab-group/africa_poverty): For satellite extraction code
 
 ## External packages used
-- 
+- scipy for sparse matrix representation and graph theoretic operation
+- xgboost for the xgboost model
+- catboost for the catboost model

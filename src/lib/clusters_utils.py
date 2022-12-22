@@ -75,6 +75,8 @@ def cluster_stats(points=None, lat=None, lon=None):
 
     tree = KDTree(points, metric="manhattan")
     clusters_count = tree.query_radius(points, CLUSTER_SIZE, count_only=True)
+    ax = sns.distplot(clusters_count, kde=False, bins=20)
+    ax.set(xlabel='Number of overlapping clusters', ylabel='Number of clusters')
     return {
         "min": np.min(clusters_count),
         "max": np.max(clusters_count),
@@ -82,7 +84,7 @@ def cluster_stats(points=None, lat=None, lon=None):
         "median": np.median(clusters_count),
         "std": np.std(clusters_count),
         # "probability overlapping": len(set().union(*clusters_count)) / len(points),
-        "hist": sns.distplot(clusters_count, kde=False, bins=20),
+        "hist": ax.get_figure(),
     }
 
 

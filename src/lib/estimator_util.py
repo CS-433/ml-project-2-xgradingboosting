@@ -19,6 +19,7 @@ from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import PolynomialFeatures
 
+
 def get_data(lsms_path: str, cnn_path: str, osm_path: str):
     """
     Function to load data and merge it
@@ -58,6 +59,7 @@ def get_data(lsms_path: str, cnn_path: str, osm_path: str):
 
     return complete, all_cols
 
+
 def run_model(X: np.array, y: np.array, model_, seed=42, kf=None, **params):
     """
     Fit the model and evaluate it 
@@ -67,6 +69,7 @@ def run_model(X: np.array, y: np.array, model_, seed=42, kf=None, **params):
     - y (np.array): Consumption
     - model (func): Model to tune the parameters
     - seed (int): For reproducibility
+    - kf : Fold generating object
     - **params : hyperparameters to give in the model
 
     Return:
@@ -86,11 +89,12 @@ def run_model(X: np.array, y: np.array, model_, seed=42, kf=None, **params):
         model = model_(**params)
         model.fit(x_train_fold, y_train_fold)
         test_predict = model.predict(x_test_fold)
-        r2.append(pearsonr(y_test_fold, test_predict)[0]**2)
+        r2.append(pearsonr(y_test_fold, test_predict)[0] ** 2)
         y_predicted.extend(test_predict)
         y_real.extend(y_test_fold)
 
     return np.mean(r2), y_real, y_predicted, model
+
 
 def run_model_out(X: np.array, y: np.array, X_out: np.array, y_out: np.array, model_, **params):
     """
@@ -102,7 +106,6 @@ def run_model_out(X: np.array, y: np.array, X_out: np.array, y_out: np.array, mo
     - X_out (np.array): Features for evaluation
     - y_out (np.array): Consumption for evaluation
     - model (func): Model to tune the parameters
-    - seed (int): For reproducibility
     - **params : hyperparameters to give in the model
 
     Return:
@@ -114,8 +117,8 @@ def run_model_out(X: np.array, y: np.array, X_out: np.array, y_out: np.array, mo
     model = model_(**params)
     model.fit(X, y)
     y_predicted = model.predict(X_out)
-    r2.append(pearsonr(y_out, y_predicted)[0]**2)
-    
+    r2.append(pearsonr(y_out, y_predicted)[0] ** 2)
+
     return np.mean(r2), y_predicted, model
 
 
@@ -129,9 +132,7 @@ def plot_predictions(y: np.array, yhat: np.array, r2: float, country: str, year:
     - r2 (float): r2 value of predictions
     - country (str): Title (in most cases the country)
     - year (str): Year or timespan
-    - n (int): For letter on plot
-    - max_y (float): Max consumption 
-    - x_label (bool): Check if label for x axis should be added 
+    - max_y (float): Max consumption
 
     Return:
     - figure
@@ -152,17 +153,21 @@ def plot_predictions(y: np.array, yhat: np.array, r2: float, country: str, year:
     plt.title(fr'$r^2$ {round(r2, 2)}', fontsize=14, loc='left')
     plt.suptitle(f'{country} {year}', ha="left", x=0.119, y=0.95, fontsize=18)
     plt.grid(alpha=1)
-    #ax.text(-0.1, 1.1, string.ascii_uppercase[n],
+    # ax.text(-0.1, 1.1, string.ascii_uppercase[n],
     #        size=20, weight='bold', transform=ax.transAxes)
 
     return fig
+
 
 def get_inflation_perf(country, base, target):
     base_infl = wb.get_series("FP.CPI.TOTL", country=country, date=base)[0]
     target_infl = wb.get_series("FP.CPI.TOTL", country=country, date=target)[0]
     return target_infl / base_infl
 
-def get_recent_features(df: pd.DataFrame, countries: list, osm_cols: list, infl: int = 1, scale_cnn: bool = True, scale_complete: bool = True, log_transform = True, pca_comp_osm = None, tsne_comp=None, pca_comp_cnn = None, poly_exp_deg_cnn = None, poly_exp_deg_osm = None, null_osm_features=None):
+
+def get_recent_features(df: pd.DataFrame, countries: list, osm_cols: list, infl: int = 1, scale_cnn: bool = True,
+                        scale_complete: bool = True, log_transform=True, pca_comp_osm=None, tsne_comp=None,
+                        pca_comp_cnn=None, poly_exp_deg_cnn=None, poly_exp_deg_osm=None, null_osm_features=None):
     """
     Return features from most recent survey for a country.
 
@@ -173,7 +178,13 @@ def get_recent_features(df: pd.DataFrame, countries: list, osm_cols: list, infl:
     - infl (int): infaltion rate for scaling
     - scale_cnn (bool): standard. CNN features
     - scale_complete (bool): standard. combined features
-    - log_transform (bool): Log Transform cons. 
+    - log_transform (bool): Log Transform cons.
+    - pca_comp_osm (int): PCA components for OSM features
+    - tsne_comp (int): TSNE components for OSM features
+    - pca_comp_cnn (int): PCA components for CNN features
+    - poly_exp_deg_cnn (int): Polynomial expansion degree for CNN features
+    - poly_exp_deg_osm (int): Polynomial expansion degree for OSM features
+    - null_osm_features (list): OSM features to be set to 0
 
     Return:
     - X (np.array): features
@@ -184,12 +195,12 @@ def get_recent_features(df: pd.DataFrame, countries: list, osm_cols: list, infl:
 
     for country in countries:
         tmp_df = df.loc[df.country == country]
-        
+
         years = tmp_df.groupby(["year"]).groups.keys()
         year = max(years)
         year_df = tmp_df.loc[tmp_df.year == year]
         cnn_X = np.array([np.array(x) for x in year_df["features"].values])
-        
+
         if scale_cnn:
             cnn_X = StandardScaler().fit_transform(cnn_X)
             if poly_exp_deg_cnn is not None:
@@ -230,7 +241,7 @@ def get_recent_features(df: pd.DataFrame, countries: list, osm_cols: list, infl:
 
     if scale_complete:
         X = StandardScaler().fit_transform(X)
-    
+
     y /= infl
 
     if log_transform:
@@ -239,7 +250,8 @@ def get_recent_features(df: pd.DataFrame, countries: list, osm_cols: list, infl:
     return X, y
 
 
-def get_recent_osm_features(df: pd.DataFrame, countries: list, osm_cols: list, infl: int = 1, scale_complete: bool = True, log_transform=True, pca_comp=None, null_osm_features=None):
+def get_recent_osm_features(df: pd.DataFrame, countries: list, osm_cols: list, infl: int = 1,
+                            scale_complete: bool = True, log_transform=True, pca_comp=None, null_osm_features=None):
     """
     Return features from most recent survey for a country.
 
@@ -251,6 +263,7 @@ def get_recent_osm_features(df: pd.DataFrame, countries: list, osm_cols: list, i
     - scale_complete (bool): standard. combined features
     - log_transform (bool): Log Transform cons.
     - pca_comp (int) : number of Principal Component we want to keep
+    - null_osm_features (list): OSM features to be set to 0
 
     Return:
     - X (np.array): features
@@ -288,7 +301,7 @@ def get_recent_osm_features(df: pd.DataFrame, countries: list, osm_cols: list, i
         for f in null_osm_features:
             if f in osm_cols:
                 osm_cols.remove(f)
-    
+
     y /= infl
 
     if log_transform:
@@ -296,7 +309,9 @@ def get_recent_osm_features(df: pd.DataFrame, countries: list, osm_cols: list, i
 
     return X, y, year_df, osm_X
 
-def get_features(df: pd.DataFrame, countries: list, years: list, osm_cols: list, infl: int = 1, scale_cnn: bool = True, scale_complete: bool = True, log_transform = True):
+
+def get_features(df: pd.DataFrame, countries: list, years: list, osm_cols: list, infl: int = 1, scale_cnn: bool = True,
+                 scale_complete: bool = True, log_transform=True):
     """
     Return features for a country by given years..
 
@@ -319,12 +334,12 @@ def get_features(df: pd.DataFrame, countries: list, years: list, osm_cols: list,
 
     for country in countries:
         tmp_df = df.loc[df.country == country]
-        
+
         for year in years:
-        
+
             year_df = tmp_df.loc[tmp_df.year == year]
             cnn_X = np.array([np.array(x) for x in year_df["features"].values])
-            
+
             if scale_cnn:
                 cnn_X = StandardScaler().fit_transform(cnn_X)
             osm_X = year_df[osm_cols].values
@@ -342,13 +357,14 @@ def get_features(df: pd.DataFrame, countries: list, years: list, osm_cols: list,
 
     if scale_complete:
         X = StandardScaler().fit_transform(X)
-    
+
     y /= infl
 
     if log_transform:
         y = np.log(y)
 
     return X, y
+
 
 def get_features_allyears(complete_df, countries, osm_colls):
     """
@@ -366,11 +382,11 @@ def get_features_allyears(complete_df, countries, osm_colls):
     X = None
     y = None
 
-    for country in countries:        
+    for country in countries:
         tmp_df = complete_df.loc[complete_df.country == country]
         years = tmp_df.groupby(["year"]).groups.keys()
         for year in years:
-            
+
             year_df = tmp_df.loc[tmp_df.year == year]
             cnn_X = np.array([np.array(x) for x in year_df["features"].values])
             osm_X = year_df[osm_colls].values
@@ -382,7 +398,7 @@ def get_features_allyears(complete_df, countries, osm_colls):
                 X = tmp_X
             else:
                 X = np.vstack((X, tmp_X))
-            
+
             if y is None:
                 y = y_
             else:
