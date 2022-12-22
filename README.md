@@ -12,7 +12,7 @@ To run the code on your local machine you have to install the requirements file 
 #### Run local
 
 Most of the code can be run on your local machine, you just have to clone the git repository. However, we strongly recommend to execute the [0.1_download_satellite_colab](src/1_feature_generation/0.1_download_satellite_colab.ipynb) and [1.1_cnn colab.ipynb](src/1_feature_generation/1.1_cnn colab.ipynb) on Google Colab. The benefit here is, you directly using tools like [Google Earth Engine](https://earthengine.google.com/) and [Pytorch](https://pytorch.org/), in addition you can use the GPU's to reduce significantly the computation time. Also note that running the CNN requires at least 28GB of RAM.
-
+Librairiews depending on GPU libraries might require some additional steps to install. For example, if you are using a Mac, you might have to install [CUDA](https://developer.nvidia.com/cuda-toolkit-archive). Furthermore the xgboost library might install itself as CPU only, this would heavily slow down computations. To install the GPU version of xgboost, you have to install py-xgboost-gpu packeage. This package is not available on windows and the DLLs libraries should be used.  
 #### Google Colab
 
 You can directly run a Jupyter Notebook from a GitHub project. To do so, follow the steps:
