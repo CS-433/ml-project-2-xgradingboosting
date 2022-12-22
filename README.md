@@ -54,10 +54,11 @@ After you successfully downloaded, processed and extracted everything you can ru
 - [0_recent_surveys](src/2_evaluation/0_recent_surveys.ipynb): Evaluation of the recent surveys for each country and optimisation of the prediction model, plot of the features importances
 - [1_recent_combined](src/2_evaluation/1_recent_combined.ipynb): Evaluation on combined (pooled) features of the most recent surveys of each country.
 - [3_time_travel](src/2_evaluation/3_time_travel.ipynb): Evaluation of the prediction through time. 
-
+- [osm_vis_preprocess](src/2_evaluation/osm_vis_preprocess.ipynb): Visualisation of statistics of the OSM features and impact of PCA on CNN weights
+- [plot_cluster_performance](src/2_evaluation/plot_cluster_performance.ipynb): Plot of the influence of splitting the data into non overlapping folds on the performance of the models.
+- [1.5_cnn_GMM_test](src/2_evaluation/1.5_cnn_GMM_test.ipynb): Test of the impact of the number of GMM components on the CNN features.
 The figures generated in by this code are saved in the dir [figs](figs/).
 Note that the goal of our project is to optimize the existing model, so we made sure to keep the base model which, in each part of the code, is trained and evaluated before our best model (so we have each time the graphs of the results with a Ridge Regression and CatBoost separately)
-
 
 ### Other figures
 
@@ -67,7 +68,7 @@ The [3_figs](src/3_figs/) contains the code for some figures presented in the or
 
 The lib folder contains code, which used in the notebooks. Please read the code and the comment to understand in depth there function. Here an overview.
 
-- [clusters_util](src/lib/clusters_util.py): Functions that assure the non overlapping of the satellites images between test and train set
+- [clusters_util](src/lib/clusters_util.py): Functions that assure the non overlapping of the satellites images between test and train folds
 - [estimator_util](src/lib/estimator_util.py): contains the functions such as the ridge regression, data load for the estimation.
 - [lsms](src/lib/lsms.py): Class for processing the surveys.
 - [satellite_utils](src/lib/satellite_utils.py): Utils for satellite extraction.
