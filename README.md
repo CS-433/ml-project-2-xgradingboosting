@@ -7,7 +7,7 @@ TLDR: We are using data from Landsat and OpenStreetMap to predict consumption. C
 TLDR: Go the [src](src/) dir and follow the steps. 
 
 ### Setup
-To run the code on your local machine you have to install the requirements file by executing `pip install -r requirements.txt`.
+To run the code on your local machine you have to install the requirements file by executing `conda env create -f environment.yml`.
 
 #### Run local
 
@@ -82,3 +82,6 @@ There are still some parts which parts which are Work In Progress, such as the T
 ## Acknowledgements
 - [ohsome API](https://github.com/GIScience/ohsome-py): For extracting OSM Features
 - [africa-poverty](https://github.com/sustainlab-group/africa_poverty): For satellite extraction code
+
+## External packages used
+- 
