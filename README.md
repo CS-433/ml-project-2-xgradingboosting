@@ -83,6 +83,9 @@ There are still some parts which parts which are Work In Progress, such as the T
 - [ohsome API](https://github.com/GIScience/ohsome-py): For extracting OSM Features
 - [africa-poverty](https://github.com/sustainlab-group/africa_poverty): For satellite extraction code
 
+### Pretrained models
+Pretrained models are found under the src folder. CNN models have an pth extension. The others are discriminated by their name. Those files are the result of a simple pickle serialisation and are to be loaded with the same library
+
 ## External packages used
 - scipy for sparse matrix representation and graph theoretic operation
 - xgboost for the xgboost model
